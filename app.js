@@ -8,14 +8,17 @@ const next = document.querySelector("#controls #next");
 const duration = document.querySelector("#duration");
 const currentTime = document.querySelector("#current-time");
 const progressBar = document.querySelector("#progress-bar");
-const volume =document.querySelector("#volume");
-const volumeBar =document.querySelector("#volume-bar");
+const volume = document.querySelector("#volume");
+const volumeBar = document.querySelector("#volume-bar");
+const ul = document.querySelector("ul");
 
 const player = new MusicPlayer(musicList);
 
 window.addEventListener("load", () => {
   let music = player.getMusic();
   displayMusic(music);
+  displayMusicList(player.musicList);
+  isPlayingNow();
 });
 
 function displayMusic(music) {
@@ -38,6 +41,7 @@ function nextMusic() {
   let music = player.getMusic();
   displayMusic(music);
   playMusic();
+  isPlayingNow();
 }
 
 function prevMusic() {
@@ -45,6 +49,7 @@ function prevMusic() {
   let music = player.getMusic();
   displayMusic(music);
   playMusic();
+  isPlayingNow();
 }
 
 play.addEventListener("click", () => {
@@ -58,13 +63,13 @@ play.addEventListener("click", () => {
 
 function pauseMusic() {
   container.classList.remove("playing");
-  play.classList = "fa-solid fa-play";
+  play.querySelector("i").classList = "fa-solid fa-play";
   audio.pause();
 }
 
 function playMusic() {
   container.classList.add("playing");
-  play.classList = "fa-solid fa-pause";
+  play.querySelector("i").classList = "fa-solid fa-pause";
 
   audio.play();
 }
@@ -93,34 +98,74 @@ progressBar.addEventListener("input", () => {
   audio.currentTime = progressBar.value;
 });
 
-let sesDurumu="sesli";
-volumeBar.addEventListener("input",(e)=>{
-    const value = e.target.value;
+let sesDurumu = "sesli";
+volumeBar.addEventListener("input", (e) => {
+  const value = e.target.value;
 
-    audio.volume=value/100;
-    if(value==0){
-        audio.muted=true;
-        sesDurumu="sessiz";
-        volume.classList ="fa-solid fa-volume-xmark";
-    }
-    else{
-        audio.muted=false;
-        sesDurumu="sesli";
-        volume.classList ="fa-solid fa-volume-high";
-    }
+  audio.volume = value / 100;
+  if (value == 0) {
+    audio.muted = true;
+    sesDurumu = "sessiz";
+    volume.classList = "fa-solid fa-volume-xmark";
+  } else {
+    audio.muted = false;
+    sesDurumu = "sesli";
+    volume.classList = "fa-solid fa-volume-high";
+  }
 });
 
-volume.addEventListener("click",()=>{   
-    if(sesDurumu==="sesli"){
-        audio.muted=true;
-        sesDurumu="sessiz";
-        volume.classList ="fa-solid fa-volume-xmark";
-        volumeBar.value=0;
+volume.addEventListener("click", () => {
+  if (sesDurumu === "sesli") {
+    audio.muted = true;
+    sesDurumu = "sessiz";
+    volume.classList = "fa-solid fa-volume-xmark";
+    volumeBar.value = 0;
+  } else {
+    audio.muted = false;
+    sesDurumu = "sesli";
+    volume.classList = "fa-solid fa-volume-high";
+    volumeBar.value = 100;
+  }
+});
+
+function displayMusicList(list) {
+  for (let i = 0; i < list.length; i++) {
+    let liTag = `<li li-index='${i}'  onclick="selectedMusic(this)" class="list-group-item d-flex justify-content-between align-items-center">
+        <span>${list[i].getName()}</span>
+        <span id="music-${i}"class="badge bg-primary rounded-pill"></span>
+        <audio class="music-${i}" src="mp3/${list[i].file}"></audio>
+      </li>`;
+
+    ul.insertAdjacentHTML("beforeend", liTag);
+
+    let liAudioDuration = ul.querySelector(`#music-${i}`);
+    let liAudioTag = ul.querySelector(`.music-${i}`);
+
+    liAudioTag.addEventListener("loadeddata", () => {
+      liAudioDuration.innerText = calculateTime(liAudioTag.duration);
+    });
+  }
+}
+
+function selectedMusic(li) {
+  player.index = li.getAttribute("li-index");
+  displayMusic(player.getMusic());
+  playMusic();
+  isPlayingNow();
+}
+
+function isPlayingNow() {
+  for (let li of ul.querySelectorAll("li")) {
+    if (li.classList.contains("playing")) {
+      li.classList.remove("playing");
     }
-    else{
-        audio.muted=false;
-        sesDurumu="sesli";
-        volume.classList ="fa-solid fa-volume-high";
-        volumeBar.value=100;
+
+    if (li.getAttribute("li-index") == player.index) {
+      li.classList.add("playing");
     }
+  }
+}
+
+audio.addEventListener("ended",()=>{
+  nextMusic();
 });
